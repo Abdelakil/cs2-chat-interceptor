@@ -72,48 +72,6 @@ A SwiftlyS2 plugin that intercepts and blocks command-like messages in chat with
 - `Commands`: Commands that are never blocked (default: `[]`)
 - `Players`: Players (by name or SteamID) that can use any command (default: `[]`)
 
-## Usage Examples
-
-### Gaming Server
-```jsonc
-{
-  "Enabled": true,
-  "CommandPrefixes": ["!", "/", "$"],
-  "Messages": {
-    "CustomMessage": "[red][OSTORA][red] [white]Commands are not allowed in chat! Use console instead.",
-    "ShowBlockedCommand": true
-  },
-  "Whitelist": {
-    "Commands": ["!ws", "!admin"]
-  }
-}
-```
-
-### Professional Server
-```jsonc
-{
-  "Enabled": true,
-  "CommandPrefixes": ["/"],
-  "Messages": {
-    "CustomMessage": "[red][OSTORA][red] [white]Please use console commands instead of chat commands.",
-    "MessageType": "Center"
-  }
-}
-```
-
-### Translation-Based Server
-```jsonc
-{
-  "Enabled": true,
-  "CommandPrefixes": ["!"],
-  "Messages": {
-    "TranslationKey": "chatinterceptor.messages.command_blocked",
-    "CustomMessage": null,
-    "ShowBlockedCommand": false
-  }
-}
-```
-
 ## Permissions
 
 ### Bypass Permission
