@@ -1,4 +1,4 @@
-name: Build ChatCommandInterceptor
+name: Build and Release
 
 on:
   push:
@@ -7,73 +7,150 @@ on:
     branches: [ main ]
   release:
     types: [ published ]
+  workflow_dispatch:
+
+concurrency:
+  group: build
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: write
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '10.0.x'
+      - name: Extract version from PluginMetadata
+        id: version
+        run: |
+          # Find Version = "x.y.z" in any .cs file
+          VERSION=$(grep -roh 'Version *= *"[^"]*"' --include="*.cs" | head -1 | sed 's/.*"\(.*\)".*/\1/')
 
-    - name: Cache NuGet packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not find PluginMetadata Version"
+            exit 1
+          fi
 
-    - name: Clone SwiftlyS2
-      run: |
-        git clone --depth 1 --branch 1.2.2 https://github.com/swiftly-solution/swiftlys2.git
-        ls -la swiftlys2/
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Found version: $VERSION"
 
-    - name: Restore dependencies
-      run: |
-        dotnet restore ChatCommandInterceptor.csproj --configfile NuGet.Config
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: "**/*.csproj"
 
-    - name: Build SwiftlyS2
-      run: |
-        cd swiftlys2/managed
-        dotnet build --configuration Release
+      - name: Restore and Publish
+        run: |
+          # Find all csproj files with CreateZip target (these produce release artifacts)
+          PROJECTS=$(grep -l "CreateZip" $(find . -name "*.csproj") 2>/dev/null || true)
 
-    - name: Build plugin
-      run: |
-        dotnet build ChatCommandInterceptor.csproj --configuration Release --no-restore
+          if [ -z "$PROJECTS" ]; then
+            echo "::error::No projects with CreateZip target found"
+            exit 1
+          fi
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: ChatCommandInterceptor
-        path: |
-          build/net10.0/
-          !build/net10.0/**/*.pdb
-        retention-days: 30
+          echo "Found projects to build:"
+          echo "$PROJECTS"
 
-    - name: Create release package
-      if: github.event_name == 'release'
-      run: |
-        mkdir -p release
-        cp -r build/net10.0/* release/
-        rm -f release/*.pdb
-        cd release
-        zip -r ../ChatCommandInterceptor-${{ github.event.release.tag_name }}.zip .
+          # Build each project (dependencies like shared API will be built automatically)
+          for PROJECT in $PROJECTS; do
+            echo "Building: $PROJECT"
+            dotnet restore "$PROJECT"
+            dotnet publish "$PROJECT" -c Release
+          done
 
-    - name: Upload release asset
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./ChatCommandInterceptor-${{ github.event.release.tag_name }}.zip
-        asset_name: ChatCommandInterceptor-${{ github.event.release.tag_name }}.zip
-        asset_content_type: application/zip
+      - name: Find and prepare release zips
+        id: zip
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Find all zip files created by build
+          ZIP_FILES=$(find . -name "*.zip" -type f)
+          ZIP_COUNT=$(echo "$ZIP_FILES" | wc -l | tr -d ' ')
+
+          if [ -z "$ZIP_FILES" ] || [ "$ZIP_COUNT" -eq 0 ]; then
+            echo "::error::No .zip files found after build"
+            exit 1
+          fi
+
+          echo "Found $ZIP_COUNT zip file(s)"
+
+          # Prepare output directory
+          mkdir -p release-artifacts
+
+          # If only one zip, it's the main plugin - no identification needed
+          if [ "$ZIP_COUNT" -eq 1 ]; then
+            ZIP_FILE=$(echo "$ZIP_FILES" | head -1)
+            BASENAME=$(basename "$ZIP_FILE" .zip)
+            NEW_NAME="${BASENAME}-v${VERSION}.zip"
+            mv "$ZIP_FILE" "release-artifacts/$NEW_NAME"
+            echo "Single plugin: $NEW_NAME"
+          else
+            # Multiple zips - must identify main plugin via ConfigureSharedInterface
+            MAIN_CS=$(grep -rl "ConfigureSharedInterface" --include="*.cs" . 2>/dev/null | head -1)
+
+            if [ -z "$MAIN_CS" ]; then
+              echo "::error::Multiple plugins found but cannot identify main plugin (no ConfigureSharedInterface found)"
+              exit 1
+            fi
+
+            MAIN_DIR=$(dirname "$MAIN_CS")
+            echo "Main plugin identified in: $MAIN_DIR"
+
+            MAIN_FOUND=false
+
+            for ZIP_FILE in $ZIP_FILES; do
+              BASENAME=$(basename "$ZIP_FILE" .zip)
+              NEW_NAME="${BASENAME}-v${VERSION}.zip"
+
+              # Check if this zip is from the main plugin directory
+              ZIP_DIR=$(dirname "$ZIP_FILE")
+              if [[ "$ZIP_DIR" == *"src-plugin"* ]] || [[ "$ZIP_DIR" == "$MAIN_DIR"* ]] || [[ "$MAIN_DIR" == *"$BASENAME"* ]]; then
+                echo "Main plugin: $NEW_NAME"
+                MAIN_FOUND=true
+              else
+                echo "Perk plugin: $NEW_NAME"
+              fi
+
+              mv "$ZIP_FILE" "release-artifacts/$NEW_NAME"
+            done
+
+            if [ "$MAIN_FOUND" = false ]; then
+              echo "::error::Could not match main plugin to any zip file"
+              exit 1
+            fi
+          fi
+
+          echo "all_zips=$(ls release-artifacts/*.zip | tr '\n' ' ')" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChatCommandInterceptor
+          path: release-artifacts/
+          retention-days: 30
+
+      - name: Create GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ github.event.release.tag_name }}"
+
+          echo "Creating release: $TAG"
+
+          gh release create "$TAG" \
+            --title "ChatCommandInterceptor | ${TAG}" \
+            --notes "Release v${VERSION}" \
+            release-artifacts/*.zip
+
+          echo "Release $TAG created successfully!"
