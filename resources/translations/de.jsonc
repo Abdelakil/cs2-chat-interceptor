@@ -1,0 +1,11 @@
+{
+  // ChatCommandInterceptor German Translations
+  // Naming convention: chatinterceptor.category.name
+
+  // ========== GENERAL ==========
+  "chatinterceptor.general.prefix": "[red][OSTORA][red]",
+
+  // ========== MESSAGES ==========
+  "chatinterceptor.messages.command_blocked": "[white]Befehlsähnliche Nachrichten sind im Chat nicht erlaubt.",
+  "chatinterceptor.messages.command_blocked_with_command": "[white] Befehl '{0}' ist im Chat nicht erlaubt."
+}
