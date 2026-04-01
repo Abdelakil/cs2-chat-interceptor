@@ -164,6 +164,27 @@ dotnet build --configuration Release
 # Output directory: build/net10.0/
 ```
 
+### Automatic Builds (GitHub Actions)
+
+This plugin uses a professional CI/CD pipeline following established SwiftlyS2 plugin patterns (similar to K4-LevelRanks-SwiftlyS2):
+
+**Features:**
+- ✅ **Automatic builds** on every push to main branch
+- ✅ **Version extraction** from PluginMetadata
+- ✅ **Release packaging** with automatic zip creation
+- ✅ **GitHub releases** created automatically on pushes
+- ✅ **Build artifacts** available for download
+- ✅ **Professional workflow** following industry standards
+
+**Build Triggers:**
+- Push to main branch → Automatic build + release
+- Pull requests → Build verification
+- Manual workflow_dispatch → On-demand builds
+
+**Release Naming:**
+- Automatic: `v1.0.0-{commit-hash}` (prerelease)
+- Manual: `v1.0.0` (stable release)
+
 ### Build Output
 ```
 build/net10.0/

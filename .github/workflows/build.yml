@@ -138,7 +138,44 @@ jobs:
           path: release-artifacts/
           retention-days: 30
 
-      - name: Create GitHub Release
+      - name: Create GitHub Release (Auto on Push)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Get commit hash for unique tag
+          COMMIT_HASH=$(git rev-parse --short HEAD)
+          TAG="v${VERSION}-${COMMIT_HASH}"
+          
+          echo "Creating automatic release: $TAG"
+
+          # Check if release already exists
+          if gh release view "$TAG" &>/dev/null; then
+            echo "Release $TAG already exists, skipping..."
+          else
+            gh release create "$TAG" \
+              --title "ChatCommandInterceptor | ${TAG}" \
+              --notes "Automatic build release v${VERSION} (commit: ${COMMIT_HASH})
+
+This is an automated release created from the latest push to main branch.
+
+**Changes in this build:**
+- Latest code from main branch
+- Built with SwiftlyS2.CS2 package
+- Multi-language support with OSTORA branding
+- Hot-reload configuration support
+- Professional CI/CD pipeline
+
+**Download:** Extract the zip file to your SwiftlyS2 plugins directory." \
+              --prerelease \
+              release-artifacts/*.zip
+
+            echo "Automatic release $TAG created successfully!"
+          fi
+
+      - name: Create GitHub Release (Manual Release)
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -146,7 +183,7 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           TAG="${{ github.event.release.tag_name }}"
 
-          echo "Creating release: $TAG"
+          echo "Creating manual release: $TAG"
 
           gh release create "$TAG" \
             --title "ChatCommandInterceptor | ${TAG}" \
