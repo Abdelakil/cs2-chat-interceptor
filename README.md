@@ -234,3 +234,4 @@ For issues and support:
 - Hot-reload configuration
 - Permission bypass system
 - Professional SwiftlyS2 integration
+- Automatic CI/CD pipeline with GitHub Actions
