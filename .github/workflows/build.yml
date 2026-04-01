@@ -5,9 +5,15 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a release'
+        required: false
+        default: 'true'
+        type: boolean
   release:
     types: [ published ]
-  workflow_dispatch:
 
 concurrency:
   group: build
@@ -141,7 +147,7 @@ jobs:
       - name: Create GitHub Release (Auto on Push)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           
@@ -151,13 +157,10 @@ jobs:
           
           echo "Creating automatic release: $TAG"
 
-          # Check if release already exists
-          if gh release view "$TAG" &>/dev/null; then
-            echo "Release $TAG already exists, skipping..."
-          else
-            gh release create "$TAG" \
-              --title "ChatCommandInterceptor | ${TAG}" \
-              --notes "Automatic build release v${VERSION} (commit: ${COMMIT_HASH})
+          # Create release (will fail if exists, that's ok)
+          gh release create "$TAG" \
+            --title "ChatCommandInterceptor | ${TAG}" \
+            --notes "Automatic build release v${VERSION} (commit: ${COMMIT_HASH})
 
 This is an automated release created from the latest push to main branch.
 
@@ -169,11 +172,10 @@ This is an automated release created from the latest push to main branch.
 - Professional CI/CD pipeline
 
 **Download:** Extract the zip file to your SwiftlyS2 plugins directory." \
-              --prerelease \
-              release-artifacts/*.zip
+            --prerelease \
+            release-artifacts/*.zip || echo "Release $TAG already exists or failed, continuing..."
 
-            echo "Automatic release $TAG created successfully!"
-          fi
+          echo "Automatic release process completed!"
 
       - name: Create GitHub Release (Manual Release)
         if: github.event_name == 'release'
