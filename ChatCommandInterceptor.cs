@@ -10,10 +10,10 @@ namespace ChatCommandInterceptor;
 [PluginMetadata(
     Id = "ChatCommandInterceptor",
     Name = "Chat Command Interceptor",
-    Author = "SwiftlyS2",
+    Author = "Zenjibad",
     Version = "1.0.0",
     Description = "Intercepts chat messages that start with command prefixes and blocks them from execution with full configuration and translation support.",
-    Website = "https://github.com/swiftly-solution/swiftlys2"
+    Website = "https://github.com/Abdelakil/cs2-chat-interceptor"
 )]
 public partial class ChatCommandInterceptor(ISwiftlyCore core) : BasePlugin(core)
 {
