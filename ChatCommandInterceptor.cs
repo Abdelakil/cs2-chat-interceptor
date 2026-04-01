@@ -13,7 +13,7 @@ namespace ChatCommandInterceptor;
     Author = "Zenjibad",
     Version = "1.0.0",
     Description = "Intercepts chat messages that start with command prefixes and blocks them from execution with full configuration and translation support.",
-    Website = "https://github.com/Abdelakil/cs2-chat-interceptor"
+    Website = "https://ostora.xyz"
 )]
 public partial class ChatCommandInterceptor(ISwiftlyCore core) : BasePlugin(core)
 {
