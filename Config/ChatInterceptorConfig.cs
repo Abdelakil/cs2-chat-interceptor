@@ -46,11 +46,6 @@ public class MessageConfig
     /// Message type for feedback
     /// </summary>
     public string MessageType { get; set; } = "Chat";
-
-    /// <summary>
-    /// Whether to show the blocked command in feedback
-    /// </summary>
-    public bool ShowBlockedCommand { get; set; } = true;
 }
 
 public class PermissionConfig
@@ -58,7 +53,7 @@ public class PermissionConfig
     /// <summary>
     /// Permission required to bypass the interceptor
     /// </summary>
-    public string BypassPermission { get; set; } = "chatcommand.bypass";
+    public string BypassPermission { get; set; } = "ostora.discord.linked";
 
     /// <summary>
     /// Whether to enable permission bypass
@@ -71,7 +66,7 @@ public class WhitelistConfig
     /// <summary>
     /// Commands that are always allowed (never blocked)
     /// </summary>
-    public List<string> Commands { get; set; } = new();
+    public List<string> Commands { get; set; } = new() { "!admin", "!link" };
 
     /// <summary>
     /// Players that are always allowed to use commands

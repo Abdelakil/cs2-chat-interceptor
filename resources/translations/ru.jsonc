@@ -6,6 +6,6 @@
   "chatinterceptor.general.prefix": "[red][OSTORA][red]",
 
   // ========== MESSAGES ==========
-  "chatinterceptor.messages.command_blocked": "[white]Сообщения, похожие на команды, не разрешены в чате.",
+  "chatinterceptor.messages.command_blocked": "[white]Доступ запрещен! 🔒 Используйте [yellow]!link [white], чтобы привязать Discord и открыть доступ к этой функции.",
   "chatinterceptor.messages.command_blocked_with_command": "[white] Команда '{0}' не разрешена в чате."
 }

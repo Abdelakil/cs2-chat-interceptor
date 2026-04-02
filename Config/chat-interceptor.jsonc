@@ -11,7 +11,6 @@
   // Message configuration
   "Messages": {
     // Translation key for feedback message (from resources/translations/)
-    // Available keys: "chatinterceptor.messages.command_blocked", "chatinterceptor.messages.command_blocked_with_command"
     "TranslationKey": "chatinterceptor.messages.command_blocked",
     
     // Custom message that overrides translations (set to null to use translations)
@@ -19,16 +18,13 @@
     "CustomMessage": null,
     
     // Message type: "Chat", "Center", "Hint"
-    "MessageType": "Chat",
-    
-    // Whether to show the blocked command in the feedback message
-    "ShowBlockedCommand": true
+    "MessageType": "Chat"
   },
   
   // Permission configuration
   "Permissions": {
     // Permission that allows bypassing the command block
-    "BypassPermission": "chatcommand.bypass",
+    "BypassPermission": "ostora.discord.linked",
     
     // Enable permission bypass system
     "EnableBypass": true
@@ -37,16 +33,9 @@
   // Whitelist configuration
   "Whitelist": {
     // Commands that are always allowed (never blocked)
-    "Commands": [
-      "help",
-      "rules",
-      "discord"
-    ],
+    "Commands": ["!admin","!link"],
     
     // Players that are always allowed to use commands (by name or SteamID)
-    "Players": [
-      "AdminPlayer",
-      "76561198000000000"
-    ]
+    "Players": []
   }
 }

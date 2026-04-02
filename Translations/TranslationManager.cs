@@ -75,10 +75,6 @@ public class TranslationManager
         // Use custom message if configured (overrides translations)
         if (!string.IsNullOrEmpty(_config.Messages.CustomMessage))
         {
-            if (_config.Messages.ShowBlockedCommand && !string.IsNullOrEmpty(blockedCommand))
-            {
-                return string.Format(_config.Messages.CustomMessage, blockedCommand);
-            }
             return _config.Messages.CustomMessage;
         }
 
@@ -92,20 +88,16 @@ public class TranslationManager
 
             var localizer = _core.Translation.GetPlayerLocalizer(player);
             
-            // Get prefix and message
+            // Get prefix and message - always use command_blocked
             var prefix = localizer["chatinterceptor.general.prefix"];
-            var messageKey = _config.Messages.ShowBlockedCommand 
-                ? "chatinterceptor.messages.command_blocked_with_command"
-                : _config.Messages.TranslationKey;
-            
-            var message = _config.Messages.ShowBlockedCommand
-                ? localizer[messageKey, blockedCommand]
-                : localizer[messageKey];
+            var message = localizer[_config.Messages.TranslationKey];
             
             return $"{prefix} {message}";
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed to get translation, using fallback. TranslationKey: {Key}", 
+                _config.Messages.TranslationKey);
             return GetFallbackMessage(_config.Messages.TranslationKey, blockedCommand);
         }
     }
@@ -117,16 +109,12 @@ public class TranslationManager
     {
         var fallbacks = new Dictionary<string, string>
         {
-            ["chatinterceptor.messages.command_blocked"] = "[red][OSTORA][red] [white]Command-like messages are not allowed in chat.",
+            ["chatinterceptor.messages.command_blocked"] = "[red][OSTORA][red] [white]Access Denied! 🔒 Please use [yellow]!link [white]to connect your Discord and unlock this feature.",
             ["chatinterceptor.messages.command_blocked_with_command"] = "[red][OSTORA][red] [white] Command '{0}' is not allowed in chat."
         };
 
         if (fallbacks.TryGetValue(key, out var fallback))
         {
-            if (key.Contains("with_command") && !string.IsNullOrEmpty(blockedCommand))
-            {
-                return string.Format(fallback, blockedCommand);
-            }
             return fallback;
         }
 

@@ -6,6 +6,6 @@
   "chatinterceptor.general.prefix": "[red][OSTORA][red]",
 
   // ========== MESSAGES ==========
-  "chatinterceptor.messages.command_blocked": "[white]Les messages de type commande ne sont pas autorisés dans le chat.",
+  "chatinterceptor.messages.command_blocked": "[white]Accès refusé ! 🔒 Merci d'utiliser [yellow]!link [white]pour lier ton compte Discord et débloquer cette fonctionnalité.",
   "chatinterceptor.messages.command_blocked_with_command": "[white] La commande '{0}' n'est pas autorisée dans le chat."
 }
